@@ -33,13 +33,17 @@ defmodule TownSquareBeam.Router do
     scene_key = conn.query_params["siteKey"] || "default"
     origin = conn |> get_req_header("origin") |> List.first()
 
-    conn
-    |> WebSockAdapter.upgrade(
-      TownSquareBeam.Socket,
-      [scene_key: scene_key, origin: origin],
-      timeout: 60_000
-    )
-    |> halt()
+    if origin_allowed?(origin) do
+      conn
+      |> WebSockAdapter.upgrade(
+        TownSquareBeam.Socket,
+        [scene_key: scene_key, origin: origin],
+        timeout: 60_000
+      )
+      |> halt()
+    else
+      conn |> send_resp(403, "origin not allowed") |> halt()
+    end
   end
 
   match _ do
@@ -51,4 +55,19 @@ defmodule TownSquareBeam.Router do
   defp embed_cors(conn, _opts) do
     Plug.Conn.put_resp_header(conn, "access-control-allow-origin", "*")
   end
+
+  # A `/live` socket may only be opened from an allowlisted origin. The static
+  # widget assets stay open (above) — they are meant to embed — but the live
+  # connection is locked to the site(s) this server is for.
+  defp origin_allowed?(origin) do
+    allowed?(origin, Application.get_env(:town_square_beam, :allowed_origins, []))
+  end
+
+  @doc """
+  The pure allowlist decision. An empty allowlist (the dev default) permits any
+  origin; otherwise the request's `Origin` must match exactly. Public so it can
+  be tested without standing up a real WebSocket upgrade.
+  """
+  def allowed?(_origin, []), do: true
+  def allowed?(origin, allowed) when is_list(allowed), do: origin in allowed
 end

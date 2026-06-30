@@ -13,14 +13,13 @@ defmodule TownSquareBeam.Application do
   """
 
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
-    port =
-      case System.get_env("PORT") do
-        nil -> Application.get_env(:town_square_beam, :port, 8788)
-        value -> String.to_integer(value)
-      end
+    # Port (and the origin allowlist) come from config — the compiled default in
+    # config.exs, overridden at boot by config/runtime.exs from the environment.
+    port = Application.get_env(:town_square_beam, :port, 8788)
 
     children = [
       {Registry, keys: :unique, name: TownSquareBeam.SceneRegistry},
@@ -32,12 +31,11 @@ defmodule TownSquareBeam.Application do
 
     case Supervisor.start_link(children, opts) do
       {:ok, pid} ->
-        IO.puts("")
-        IO.puts("  TownSquareBeam listening on http://127.0.0.1:#{port}")
-        IO.puts("  · health:  http://127.0.0.1:#{port}/healthz")
-        IO.puts("  · widget:  http://127.0.0.1:#{port}/dev/dev.html")
-        IO.puts("  · socket:  ws://127.0.0.1:#{port}/live?siteKey=…")
-        IO.puts("")
+        Logger.info(
+          "TownSquareBeam listening on http://127.0.0.1:#{port} " <>
+            "(health /healthz · widget /dev/dev.html · socket ws://…/live?siteKey=…)"
+        )
+
         {:ok, pid}
 
       other ->
