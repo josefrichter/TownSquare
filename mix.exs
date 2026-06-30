@@ -7,7 +7,19 @@ defmodule TownSquareBeam.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      releases: releases()
+    ]
+  end
+
+  # A self-contained OTP release: `mix release` bundles the BEAM, this app, and
+  # its deps into a runnable artifact (see the Dockerfile). config/runtime.exs is
+  # evaluated on boot, so one build is configured entirely by the environment.
+  defp releases do
+    [
+      town_square_beam: [
+        include_executables_for: [:unix]
+      ]
     ]
   end
 

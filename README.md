@@ -40,6 +40,32 @@ PORT=8788 mix run --no-halt
 curl http://127.0.0.1:8788/healthz   # -> ok
 ```
 
+## Configuration
+
+All runtime config is environment-driven (`config/runtime.exs`), so one build
+runs anywhere:
+
+| Env var | Default | Purpose |
+|---------|---------|---------|
+| `PORT` | `8788` | HTTP/WebSocket listen port |
+| `TOWNSQUARE_ALLOWED_ORIGINS` | _(empty = any)_ | Comma-separated origins allowed to open a `/live` socket. Set it in production to lock the socket to your site. |
+| `TOWNSQUARE_MAX_CONNECTIONS_PER_IP` | `30` | New `/live` connections allowed per IP per 10s window (`0` disables). |
+| `TOWNSQUARE_TRUST_PROXY` | `false` | When `true`, read the client IP from `x-forwarded-for` (only behind a reverse proxy you control). |
+
+## Deploy
+
+A self-contained OTP release (no Elixir on the host):
+
+```bash
+docker build -t townsquare-beam .
+docker run -p 8788:8788 \
+  -e TOWNSQUARE_ALLOWED_ORIGINS=https://your-site.example \
+  townsquare-beam
+```
+
+The image bundles the BEAM, the release, and the widget assets; it runs on any
+container host. `config/runtime.exs` reads the table above at boot.
+
 ## Tests
 
 Pure unit tests:

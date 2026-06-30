@@ -1,0 +1,23 @@
+# Build artifacts and deps are rebuilt inside the image.
+_build/
+deps/
+*.tar
+*.ez
+
+# VCS and editor/tooling state.
+.git/
+.github/
+.elixir_ls/
+.impeccable/
+
+# Not needed in the server image.
+test/
+docs/
+ARTICLE.md
+article.html
+crowd-article.html
+README.md
+AGENTS.md
+roadmap.md
+spec.md
+parity/
