@@ -81,6 +81,12 @@ function readOffline() {
   return params.has("offline") || params.get("simulate") === "1";
 }
 
+// Dev convenience: ?siteKey=annex mounts the widget on a non-default scene, so you
+// can open a second tab to watch a bot that lives elsewhere (cross-scene demo).
+function readSiteKey() {
+  return new URLSearchParams(window.location.search).get("siteKey") || undefined;
+}
+
 function seededRandom(seed) {
   let state = seed >>> 0;
   return () => {
@@ -232,9 +238,10 @@ function seedBirds(ctx) {
 }
 
 const offline = readOffline();
+const siteKey = readSiteKey();
 const { ctx } = mountTownSquare(root, offline
   ? { simulate: true, layout: tuning.layout }
-  : { layout: tuning.layout });
+  : { layout: tuning.layout, siteKey });
 if (offline) seedBirds(ctx);
 const simulation = createSimulation(ctx, offline);
 

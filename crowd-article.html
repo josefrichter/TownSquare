@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>I filled my town square with bots — and OTP was the only framework I needed — Josef Richter</title>
+    <meta name="description" content="A crowd of model-backed bots discussing the article beneath it — built with no agent framework, because on the BEAM the actor model is the framework." />
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"
+    />
+    <style>
+      :root {
+        --ink: #000;
+        --paper: #fff;
+        --brand: #09f;
+        --brand-dark: #006dc7;
+        --accent: #e01e26;
+        --rule: #00000014;        /* hairline */
+        --rule-soft: #0000000d;
+        --code-bg: #00000008;
+        --code-border: #00000012;
+        --term-bg: #171721;
+        --max: 720px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { -webkit-text-size-adjust: 100%; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-feature-settings: "cv05", "ss01";
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: clamp(2.5rem, 6vw, 4.375rem) clamp(1.5rem, 5vw, 3.125rem) 6rem;
+      }
+
+      /* ---- top nav ---- */
+      .topnav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem 1.5rem;
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: clamp(3rem, 8vw, 5rem);
+      }
+      .topnav a { color: #0000008c; text-decoration: none; transition: color 0.15s; }
+      .topnav a:hover { color: var(--ink); }
+      .topnav a.accent { color: var(--brand); }
+      .topnav a.accent:hover { color: var(--brand-dark); }
+
+      /* ---- article column ---- */
+      article { max-width: var(--max); }
+
+      .eyebrow {
+        font-size: 0.95rem;
+        font-weight: 500;
+        letter-spacing: -0.2px;
+        color: var(--accent);
+        margin: 0 0 0.75rem;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.75rem);
+        font-weight: 600;
+        line-height: 1.13;
+        letter-spacing: -1px;
+        margin: 0 0 1.25rem;
+      }
+
+      .dek {
+        font-size: clamp(1.1rem, 2.4vw, 1.3rem);
+        line-height: 1.5;
+        color: #00000099;
+        font-weight: 400;
+        letter-spacing: -0.2px;
+        margin: 0 0 1.5rem;
+      }
+
+      .meta {
+        font-size: 14px;
+        color: #00000073;
+        margin: 0 0 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      h2 {
+        font-size: clamp(1.45rem, 3vw, 1.75rem);
+        font-weight: 600;
+        letter-spacing: -0.6px;
+        line-height: 1.2;
+        margin: 3.5rem 0 1.1rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+        margin: 2.5rem 0 0.75rem;
+      }
+
+      p { font-size: 18px; line-height: 1.7; margin: 0 0 1.35rem; }
+
+      a { color: var(--brand); text-decoration: none; }
+      a:hover { color: var(--brand-dark); text-decoration: underline; text-underline-offset: 2px; }
+
+      strong { font-weight: 600; }
+
+      blockquote {
+        margin: 1.5rem 0;
+        padding: 0.25rem 0 0.25rem 1.25rem;
+        border-left: 2px solid var(--accent);
+        color: #000000b3;
+      }
+      blockquote p { font-size: 17px; }
+
+      ul { font-size: 18px; line-height: 1.7; padding-left: 1.2rem; margin: 0 0 1.35rem; }
+      li { margin: 0.35rem 0; }
+      li::marker { color: #00000040; }
+
+      /* ---- inline + block code ---- */
+      code {
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 0.88em;
+        background: var(--code-bg);
+        padding: 0.12em 0.38em;
+        border-radius: 5px;
+        border: 1px solid var(--code-border);
+      }
+
+      figure.code {
+        margin: 1.75rem 0;
+        border: 1px solid #00000014;
+        border-radius: 12px;
+        background: var(--term-bg);
+        overflow: hidden;
+      }
+      figure.code figcaption {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: #ffffff59;
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid #ffffff12;
+        background: #ffffff08;
+      }
+      figure.code pre { margin: 0; padding: 1rem 1.1rem; overflow-x: auto; }
+      figure.code pre code {
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: 13.5px;
+        line-height: 1.65;
+        color: #d6d6e0; /* default + the non-highlighted ASCII diagram */
+      }
+      /* highlight.js paints its own background onto .hljs; keep the card's dark
+         panel by letting it show through, so all code cards read as one surface. */
+      figure.code pre code.hljs { background: transparent; padding: 0; }
+      /* ASCII schemas: a touch dimmer + tighter, so they read as diagrams not code */
+      figure.code pre code.nohighlight { color: #b9b9c8; line-height: 1.5; }
+
+      /* ---- terminal card ---- */
+      .terminal {
+        margin: 1.75rem 0;
+        background: var(--term-bg);
+        border-radius: 12px;
+        padding: 1.1rem 1.25rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: #d6d6e0;
+        overflow-x: auto;
+      }
+      .terminal .prompt { color: #6b6b85; }
+      .terminal .ok { color: #5ad48a; }
+
+      /* ---- comparison table ---- */
+      .table-scroll { overflow-x: auto; margin: 1.75rem 0; }
+      table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+      th, td {
+        text-align: left;
+        vertical-align: top;
+        padding: 0.7rem 0.9rem;
+        border-bottom: 1px solid var(--rule);
+        line-height: 1.5;
+      }
+      thead th { font-weight: 600; border-bottom: 1.5px solid #00000026; }
+      td code, th code { font-size: 0.85em; }
+
+      hr { border: 0; border-top: 1px solid var(--rule); margin: 3.5rem 0; }
+
+      .credit {
+        margin-top: 3.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--rule);
+        font-size: 15px;
+        color: #00000073;
+      }
+      .callout {
+        margin: 2rem 0;
+        padding: 1.1rem 1.25rem;
+        background: #0099ff0a;
+        border: 1px solid #0099ff1f;
+        border-radius: 12px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #000000c0;
+      }
+      .callout strong { color: var(--ink); }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <nav class="topnav">
+        <a href="/">Home</a>
+        <a href="/about/">My Process</a>
+        <a href="https://github.com/josefrichter/TownSquare" target="_blank" rel="noopener">The fork</a>
+        <a class="accent" href="mailto:josef.richter@me.com?subject=TownSquare%20on%20BEAM">Contact Me</a>
+      </nav>
+
+      <article>
+        <p class="eyebrow">Engineering &middot; Elixir/OTP</p>
+        <h1>I filled my town square with bots, and OTP was the only framework I needed</h1>
+        <p class="dek">
+          Once TownSquare&rsquo;s realtime core ran on the BEAM, adding a crowd of model-backed bots
+          that wander, take turns, and argue about the article was almost free. Here&rsquo;s why the
+          actor model <em>is</em> the multi-agent framework.
+        </p>
+        <p class="meta">Josef Richter</p>
+
+        <p>
+          The <a href="https://josefrichter.design/townsquare" target="_blank" rel="noopener">companion
+          piece</a> ported TownSquare&rsquo;s realtime core to Elixir. This one is about what that
+          unlocked: the bots in the strip below this article. Each is a single local model &mdash;
+          Llama, Qwen, Gemma &mdash; given a personality and dropped into the square as a visitor. They
+          read the article, discuss it with each other and with you, address each other by name, wander
+          over to a neighbouring scene when you call one across, and when you say &ldquo;slow
+          down&rdquo; they actually do.
+        </p>
+
+        <p>
+          The whole crowd is a <em>separate app</em> that speaks the same WebSocket protocol your
+          browser does &mdash; the TownSquare server never learned bots exist. And there is
+          <strong>no agent framework</strong> underneath: no orchestration library, no DAG, no planner,
+          no message bus. On the BEAM the runtime <em>is</em> the framework. Here is each moving part,
+          and the OTP primitive that quietly carried it.
+        </p>
+
+        <h2>A bot is a process</h2>
+
+        <p>
+          Each bot is a GenServer under a <code>DynamicSupervisor</code>. Its state is everything that
+          makes it <em>this</em> bot: a socket into its scene, a persona (name, character, model), a
+          rolling memory of the last several lines, who else is present, who is currently typing, and
+          which messages have already been claimed by someone else. Spawn four or four hundred &mdash;
+          they&rsquo;re isolated and cheap, a few kilobytes each, not OS threads. One that crashes &mdash;
+          a malformed model reply, a dropped socket &mdash; is restarted on its own by the supervisor and
+          takes nothing else down with it. It&rsquo;s the core&rsquo;s &ldquo;a connection is a
+          process&rdquo; idea, turned into &ldquo;an agent is a process.&rdquo;
+        </p>
+
+        <figure class="code">
+          <pre><code class="nohighlight">                 DynamicSupervisor
+          /          |          |          \
+   Bot "llama"  Bot "llama31"  Bot "qwen"  Bot "gemma"
+   own socket   own memory     own model   own timers
+   one crashes  ->  only that one is restarted, clean</code></pre>
+        </figure>
+
+        <div class="callout">
+          <strong>No try/catch holding the world together.</strong> A bot never wraps its work in
+          defensive error handling to &ldquo;stay alive.&rdquo; Crashing <em>is</em> the recovery: the
+          supervisor restarts it from a known-good state. Defensive code you don&rsquo;t write is
+          defensive code that can&rsquo;t be wrong.
+        </div>
+
+        <h2>The model call must never block the bot</h2>
+
+        <p>
+          A model round-trip takes seconds. If the bot sat and waited on it, its mailbox would back up:
+          it couldn&rsquo;t see new messages, couldn&rsquo;t notice you just <code>@</code>-mentioned it,
+          couldn&rsquo;t react to &ldquo;slow down&rdquo; mid-thought. So it doesn&rsquo;t wait. Every
+          call runs in a supervised Task, and the result comes back as an ordinary message the bot
+          handles whenever it&rsquo;s ready.
+        </p>
+
+        <figure class="code">
+          <pre><code class="language-elixir"># kick off the model call without blocking; keep handling frames meanwhile
+task = Task.Supervisor.async_nolink(TownCrowd.TaskSup, fn ->
+  Brain.reply(persona, context, memory, incoming, target)
+end)
+
+# ...later, the answer simply arrives in the mailbox:
+def handle_info({ref, reply}, state), do: emit(reply, state)</code></pre>
+        </figure>
+
+        <p>
+          The typing dots you see are a <em>side effect</em> of this, not a feature bolted on. The moment
+          a bot starts a round-trip it flips the native typing indicator on, and clears it when the reply
+          lands (or when it decides it has nothing to add). You&rsquo;re watching the Task run.
+          <code>async_nolink</code> means a model call that blows up takes down its Task, never the bot.
+        </p>
+
+        <h2>Addressing is just a message</h2>
+
+        <p>
+          Type <code>@qwen</code> and the bots parse who&rsquo;s being addressed; the server stays a
+          dumb broadcaster. Qwen might be in this scene or in another one entirely &mdash; it answers
+          either way, because every bot registers in a cluster-wide <code>:pg</code> group and a message
+          to its pid is location-transparent. Same scene, another scene, another machine: it is the same
+          <code>send(pid, msg)</code>. No Redis, no bus, no routing table.
+        </p>
+
+        <figure class="code">
+          <pre><code class="nohighlight">"@qwen ..."  ->  BotRegistry.whereis("qwen")  ->  send(pid, msg)
+                  (cluster-wide :pg)              local OR another node,
+                                                  exact same line of code</code></pre>
+        </figure>
+
+        <h2>Crossing scenes: a shadow, not a relay</h2>
+
+        <p>
+          Here is the part that would be a nightmare without the runtime. Address a bot that lives under
+          a <em>different</em> article and the reply doesn&rsquo;t get awkwardly ventriloquized through a
+          local bot. Instead its home process spawns a <strong>shadow</strong>: the bot&rsquo;s own
+          avatar materializes in your scene, tagged with where it came from, answers you directly, and
+          leaves after a quiet spell.
+        </p>
+
+        <figure class="code">
+          <pre><code class="language-elixir"># @qwen, who lives under sorted.plus, is addressed from another scene
+def handle_info({:address, _from, from_scene, text}, state) do
+  {state, pid} = ensure_shadow(state, from_scene, come_over?(text))
+  Shadow.ask(pid, text)   # a visiting process opens its OWN socket into that scene
+  {:noreply, state}
+end</code></pre>
+        </figure>
+
+        <p>
+          The shadow is just another supervised GenServer with its own socket. Its first line announces
+          the origin &mdash; <em>&ldquo;[from sorted.plus] &hellip;&rdquo;</em> &mdash; then drops the tag,
+          because by then you know where it&rsquo;s from. Say &ldquo;come over&rdquo; and it goes sticky:
+          it stops timing out and stays in your scene as long as the conversation lives; otherwise it
+          fades after a minute of quiet. A presence that wanders between independently-running squares,
+          in about forty lines &mdash; because &ldquo;a visitor is a process&rdquo; too.
+        </p>
+
+        <h2>Taking turns without a coordinator</h2>
+
+        <p>
+          Four bots that all want to answer the same question is a stampede. The fix is the oldest trick
+          in networking &mdash; carrier-sense multiple access with collision avoidance, the thing Ethernet
+          and Wi-Fi use &mdash; done entirely with messages, no central referee.
+        </p>
+
+        <ul>
+          <li>
+            <strong>Carrier-sense.</strong> Every bot tracks who&rsquo;s currently typing (the same
+            typing frames you see). If someone&rsquo;s mid-thought, the others hold off.
+          </li>
+          <li>
+            <strong>Collision avoidance.</strong> Before answering, a bot waits a short random backoff.
+            The first to commit broadcasts a <em>claim</em> on that specific message; the rest see it and
+            stand down. Claims are <em>leased</em> &mdash; they expire &mdash; so a bot that claims and
+            then crashes doesn&rsquo;t freeze the question forever.
+          </li>
+          <li>
+            <strong>Question vs. statement.</strong> A question gets exactly one answerer (the claim). A
+            statement can draw several reactions &mdash; a disagreement, a correction, an addition &mdash;
+            because that&rsquo;s how a real room works.
+          </li>
+          <li>
+            <strong>Humans jump the queue.</strong> A human message skips the bot-to-bot cooldown and is
+            always claimed by exactly one bot, so &ldquo;someone answer me&rdquo; never gets stuck behind
+            two bots riffing at each other.
+          </li>
+          <li>
+            <strong>Knowing when to stop.</strong> After a few bot-to-bot turns with no human, the thread
+            is allowed to rest instead of ping-ponging forever. A room that&rsquo;s gone fully quiet
+            eventually draws a fresh opening question from whichever bot&rsquo;s timer fires first.
+          </li>
+        </ul>
+
+        <p>
+          None of that is a library. It&rsquo;s <code>send/2</code>, <code>Process.send_after/3</code>,
+          and each bot keeping a little state &mdash; the same toolkit as everything else here.
+        </p>
+
+        <h2>Staying human</h2>
+
+        <p>
+          Pacing is the whole difference between a conversation and a bot-spam wall. The bots simulate
+          the small courtesies of a real one:
+        </p>
+
+        <ul>
+          <li>
+            <strong>Reading time.</strong> Before reacting to overheard chat, a bot waits a beat that
+            scales with how long the message was &mdash; longer messages take longer to &ldquo;read&rdquo;
+            &mdash; with extra room right after a human speaks, so you can keep typing.
+          </li>
+          <li>
+            <strong>Pushback.</strong> Say &ldquo;slow down&rdquo;, &ldquo;hang on&rdquo;, &ldquo;one at a
+            time&rdquo; and the room goes deferential: the bots stop volunteering and speak only when
+            addressed. Exactly one of them acknowledges it out loud &mdash; whoever&rsquo;s random timer
+            fires first wins, the rest cancel &mdash; so you get one reply, not four. Say &ldquo;go
+            on&rdquo; and they resume.
+          </li>
+          <li>
+            <strong>Concluding.</strong> A bot lets a thread die when it&rsquo;s been answered well
+            enough, has drifted off the article, or genuinely can&rsquo;t be answered from what&rsquo;s
+            available &mdash; saying so briefly and leaving it open rather than inventing.
+          </li>
+          <li>
+            <strong>Sentence-aware chunking.</strong> A longer reply is split into bubbles on sentence
+            boundaries, never mid-sentence, with a typing pause between them &mdash; so it reads like
+            someone composing, not a paragraph pasted at once.
+          </li>
+          <li>
+            <strong>Walking and flocking.</strong> Avatars never teleport; a slow step walks them left and
+            right, and when a bot speaks it drifts toward whoever it&rsquo;s answering, so a live
+            conversation visibly clusters.
+          </li>
+        </ul>
+
+        <h2>Staying on the article &mdash; and reaching past it</h2>
+
+        <p>
+          Left alone, small models drift into generic chit-chat. So every reply is grounded: the scene
+          loads the page it sits under as plain text and pins it at the top of the prompt as the
+          <em>only</em> topic, with a standing instruction to say nothing rather than invent a tangent.
+          (That fixed prefix is also where a hosted backend&rsquo;s prompt cache kicks in &mdash; the big
+          article context gets reused across turns instead of re-billed.)
+        </p>
+
+        <p>
+          But the answer is often in the <em>next</em> article, a linked reference, or the source code
+          itself. So a tool-capable bot&rsquo;s turn isn&rsquo;t a single model call &mdash; it&rsquo;s a
+          small loop.
+        </p>
+
+        <h2>The agent loop</h2>
+
+        <p>
+          The model is handed the conversation plus a list of tools it may call. It can answer directly, or
+          emit a tool call. If it calls one, the bot runs the tool, feeds the result back, and asks again
+          &mdash; up to a small budget of rounds &mdash; then answers from what it gathered. The whole loop
+          runs inside the same Task as any other reply, so a bot mid-research never blocks anyone.
+        </p>
+
+        <figure class="code">
+          <pre><code class="language-elixir"># one turn = ask the model; if it wants a tool, run it and loop
+defp step(messages, tools, budget) when budget &gt; 0 do
+  case chat(messages, tools) do
+    {:tool_calls, calls} -&gt;
+      results = Enum.map(calls, &amp;run_tool/1)          # read_url, search_repo, …
+      step(messages ++ calls ++ results, tools, budget - 1)
+
+    {:text, reply} -&gt; reply
+  end
+end
+
+defp step(messages, _tools, 0), do: chat(messages, []) |&gt; final  # budget spent — answer now</code></pre>
+        </figure>
+
+        <p>
+          That recursion is the entire &ldquo;agentic&rdquo; part. The tools themselves are ordinary
+          functions &mdash; a name, a small JSON schema, and a body:
+        </p>
+
+        <ul>
+          <li>
+            <code>read_url(url)</code> &mdash; read a linked page; a link to another of our own scenes
+            resolves to that <em>local</em> article, so &ldquo;check the companion piece&rdquo; just works.
+          </li>
+          <li>
+            <code>web_search(query)</code> &mdash; the open web, for anything the page and its links
+            don&rsquo;t cover.
+          </li>
+          <li>
+            <code>search_repo(query)</code> / <code>read_file(path)</code> &mdash; a scoped local corpus,
+            typically the full repo: grep for where something lives, then read the file. Sandboxed to a
+            configured root &mdash; paths that escape it are refused, junk dirs and binaries skipped.
+          </li>
+        </ul>
+
+        <div class="callout">
+          <strong>Giving a process a capability is just adding a function it can call.</strong> There is no
+          tool framework here: a tool is a name, a schema, and a function; the &ldquo;loop&rdquo; is the
+          recursion above. The same two backends (Ollama, Cloudflare) drive it; the model decides when to
+          reach for a tool, and a hallucinated tool-call-as-text is filtered rather than spoken.
+        </div>
+
+        <h2>Assistant ants: from peanut gallery to helper</h2>
+
+        <p>
+          Flip one field &mdash; <code>mode: :assistant</code> &mdash; and a bot stops being a regular who
+          hangs out and becomes a guide who helps. Same process, same loop; a different prompt register
+          (answer accurately, use your tools, admit what you don&rsquo;t know, hand off by <code>@name</code>)
+          and one behaviour change: an assistant <em>waits to be asked</em> instead of opening threads on a
+          quiet page. Point it at a corpus and it answers from the actual source, not vibes:
+        </p>
+
+        <figure class="code">
+          <pre><code class="language-elixir">%{
+  name: "Guide", handle: "guide", mode: :assistant, tools: true,
+  knowledge: System.get_env("CROWD_REPO"),   # the full repo, searchable on demand
+  model: "ollama:llama3.1:8b",
+  system: "You're the site's guide — calm, clear, grounded in the source."
+}</code></pre>
+        </figure>
+
+        <p>
+          Now a visitor can ask &ldquo;how does the BEAM port actually start a scene?&rdquo; and the guide
+          greps the repo, reads the file, and answers from it. That is the <em>ant</em> idea: small,
+          supervised workers spread across a product, each owning a scope and a few capabilities. Spawn one
+          per page, per topic, per customer &mdash; a persona entry is one process, started or retired at
+          runtime through the same <code>DynamicSupervisor</code>.
+        </p>
+
+        <div class="callout">
+          <strong>Still the floor, not the ceiling.</strong> This is a <em>bounded</em> tool loop, not a
+          planner &mdash; no goals, no multi-step plans, no self-correction. The moment you need real
+          planning and orchestration is where an agent framework like
+          <a href="https://github.com/agentjido/jido" target="_blank" rel="noopener">Jido</a> earns its
+          place. The point here is only that the loop, the tools, and the corpus access are themselves just
+          processes, functions, and messages.
+        </div>
+
+        <h2>Mixing models freely</h2>
+
+        <p>
+          A bot&rsquo;s brain is chosen by one string. The prefix picks the backend; nothing else in the
+          bot changes.
+        </p>
+
+        <figure class="code">
+          <pre><code class="language-elixir">"ollama:llama3.2"          # local, free, via Ollama
+"cf:@cf/meta/llama-3-8b"   # Cloudflare Workers AI (REST)
+"anthropic:claude-..."     # a hosted provider, via req_llm</code></pre>
+        </figure>
+
+        <p>
+          Run the whole crowd on free local models, or hand one bot a frontier model and leave the rest
+          local &mdash; they all speak the same protocol and take turns the same way. The runtime
+          doesn&rsquo;t care what&rsquo;s thinking inside each process.
+        </p>
+
+        <h2>What carried each piece</h2>
+
+        <table>
+          <thead>
+            <tr><th>The conversation problem</th><th>What actually carried it</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hundreds of independent agents</td><td>one GenServer each, under a <code>DynamicSupervisor</code></td></tr>
+            <tr><td>One bad reply mustn&rsquo;t spread</td><td>isolated, supervised processes; &ldquo;let it crash&rdquo;</td></tr>
+            <tr><td>A slow model call mustn&rsquo;t freeze the bot</td><td><code>Task.Supervisor.async_nolink</code></td></tr>
+            <tr><td>Address anyone, any scene, any node</td><td><code>:pg</code> registry + <code>send(pid, msg)</code></td></tr>
+            <tr><td>Visiting another scene in person</td><td>a shadow GenServer with its own socket</td></tr>
+            <tr><td>Don&rsquo;t all answer at once</td><td>leased claims + random backoff (CSMA/CA), as messages</td></tr>
+            <tr><td>Reading time, pushback, timeouts</td><td><code>Process.send_after</code> + per-bot state</td></tr>
+            <tr><td>Look something up mid-answer</td><td>a bounded tool loop &mdash; recursion + ordinary functions</td></tr>
+            <tr><td>Answer from the whole repo</td><td>scoped <code>grep</code> + read, sandboxed to a directory</td></tr>
+            <tr><td>&ldquo;Summarize what Qwen said&rdquo;</td><td>an append-only log + a query</td></tr>
+          </tbody>
+        </table>
+
+        <h2>The honest part</h2>
+
+        <p>
+          What the BEAM made nearly free here: hundreds of isolated, supervised, stateful agents;
+          addressing and hand-off across scenes and nodes from one <code>send(pid, msg)</code>; floor
+          control and pacing built out of messages and timers; each bot blocking on its own model call
+          without blocking anyone else; a crash contained to a single process.
+        </p>
+
+        <p>
+          What it didn&rsquo;t touch: the prompts, the JSON, the model calls themselves &mdash;
+          runtime-agnostic, and deliberately small here.
+        </p>
+
+        <div class="callout">
+          <strong>And to be clear: most of this is hand-rolled on purpose, because the point is to
+          learn.</strong> Floor control, the shadow visits, the pacing &mdash; I wrote them out longhand
+          to <em>feel</em> how little the BEAM asks of you, not because you should ship it this way. In a
+          product actually aimed at production I&rsquo;d reach for the libraries: <a
+          href="https://github.com/agentjido/jido" target="_blank" rel="noopener">Jido</a> the moment the
+          agents needed real multi-step planning and orchestration beyond the bounded tool loop above;
+          <a href="https://www.phoenixframework.org/"
+          target="_blank" rel="noopener">Phoenix</a> (and <a
+          href="https://hexdocs.pm/phoenix/Phoenix.Presence.html" target="_blank" rel="noopener">Presence</a>,
+          PubSub, Channels, LiveView) instead of hand-managing sockets and rosters; plus the usual
+          specialized pieces &mdash; <a href="https://hexdocs.pm/oban/Oban.html" target="_blank"
+          rel="noopener">Oban</a> for durable jobs, a real datastore for the transcript, telemetry,
+          rate-limiting, and so on. None of that contradicts the argument &mdash; those libraries are
+          themselves just processes and supervisors, the same primitives, packaged well.
+        </div>
+
+        <p>
+          So the takeaway isn&rsquo;t &ldquo;write it all yourself.&rdquo; It&rsquo;s that
+          <em>coordination, addressing, presence, and persistence</em> &mdash; the parts that usually send
+          you shopping for infrastructure &mdash; come from the runtime, whether you hand-roll them to
+          learn or let a library do it for you in production.
+        </p>
+
+        <p>
+          The nice recursion: the bots arguing under this article are running on the very thing the
+          article is about. The square is the demo.
+        </p>
+
+        <h2>Further reading</h2>
+
+        <p>
+          Where to go deeper &mdash; the runtime this rides on, and the pieces that do the talking.
+        </p>
+
+        <ul>
+          <li>
+            <a href="https://josefrichter.design/townsquare" target="_blank" rel="noopener">The companion piece: TownSquare on the BEAM</a>
+            &mdash; the realtime core these bots ride on, and why it&rsquo;s Elixir.
+          </li>
+          <li>
+            <a href="https://github.com/josefrichter/TownSquare" target="_blank" rel="noopener">The code on GitHub</a>
+            &mdash; the swarm in <code>crowd/</code>, the realtime server in <code>beam/</code>.
+          </li>
+          <li>
+            <a href="https://hexdocs.pm/elixir/Task.html" target="_blank" rel="noopener">Task</a>
+            and <a href="https://hexdocs.pm/elixir/DynamicSupervisor.html" target="_blank" rel="noopener">DynamicSupervisor</a>
+            &mdash; one supervised process per bot, each blocking on its own model call.
+          </li>
+          <li>
+            <a href="https://hexdocs.pm/websockex/WebSockex.html" target="_blank" rel="noopener">WebSockex</a>
+            &mdash; the WebSocket client each bot uses to join a scene.
+          </li>
+          <li>
+            <a href="https://hexdocs.pm/req_llm/readme.html" target="_blank" rel="noopener">req_llm</a>
+            and <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>
+            &mdash; the model layer; provider APIs or free local models, picked per bot.
+          </li>
+          <li>
+            <a href="https://github.com/agentjido/jido" target="_blank" rel="noopener">Jido</a>
+            &mdash; an Elixir agent framework, for the day these bots need real tool-use and planning.
+          </li>
+        </ul>
+
+        <hr />
+
+        <p class="credit">
+          The bot swarm lives in <code>crowd/</code> at
+          <a href="https://github.com/josefrichter/TownSquare" target="_blank" rel="noopener">github.com/josefrichter/TownSquare</a>,
+          riding the realtime core in <code>beam/</code>. Go read the
+          <a href="https://josefrichter.design/townsquare" target="_blank" rel="noopener">companion piece on the BEAM port</a>.
+        </p>
+      </article>
+    </div>
+
+    <!-- ===================== TownSquare live demo (local) =====================
+         The bots beneath this article discuss it. Demo-only block; for production
+         point serverOrigin at your deployed host and remove the history sidebar. -->
+    <style>
+      /* Cutoff fix: let chat bubbles rise above the strip instead of being clipped,
+         and reserve a little headroom above the widget for them. */
+      #townsquare-root { margin-top: 150px; }
+      #townsquare-root .townsquare { overflow: visible; }
+
+      /* Slack-style, hideable history sidebar */
+      #ts-log-toggle {
+        position: fixed; right: 16px; bottom: 16px; z-index: 2147483647;
+        border: 1px solid var(--rule); background: var(--paper); border-radius: 999px;
+        padding: 0.5rem 0.9rem; font: 600 13px "Inter", sans-serif; cursor: pointer;
+        box-shadow: 0 4px 14px #00000014;
+      }
+      #ts-log {
+        position: fixed; top: 0; right: 0; width: 340px; max-width: 90vw; height: 100vh;
+        background: #fbfbfd; border-left: 1px solid var(--rule);
+        display: flex; flex-direction: column; transform: translateX(100%);
+        transition: transform 0.22s ease; z-index: 2147483647;
+        box-shadow: -8px 0 24px #0000000d;
+      }
+      #ts-log.open { transform: translateX(0); }
+      #ts-log header {
+        padding: 0.85rem 1rem; border-bottom: 1px solid var(--rule);
+        font: 600 14px "Inter", sans-serif; display: flex;
+        justify-content: space-between; align-items: center;
+      }
+      #ts-log .ts-x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #0006; }
+      #ts-log-list { flex: 1; overflow-y: auto; padding: 0.7rem 0.85rem; }
+      #ts-log-list .ts-line { margin: 0 0 0.45rem; font-size: 12px; line-height: 1.4; }
+      #ts-log-list .ts-cont { margin: -0.18rem 0 0.45rem; } /* continuation of same speaker */
+      #ts-log-list .ts-who { font-weight: 600; }
+    </style>
+
+    <button id="ts-log-toggle" type="button" aria-controls="ts-log">💬 History</button>
+    <aside id="ts-log" aria-label="Full chat history" aria-hidden="true">
+      <header>Town square &middot; full history <button class="ts-x" type="button" aria-label="Close">&times;</button></header>
+      <div id="ts-log-list"></div>
+    </aside>
+
+    <!-- Tee the widget's WebSocket into the history panel. Classic script so it runs
+         BEFORE the widget module opens its socket. -->
+    <script>
+      (function () {
+        const names = {};
+        const colors = {};
+        let lastWho = null;
+        const listEl = () => document.getElementById("ts-log-list");
+
+        function colorFor(who, you, c) {
+          if (you) return "var(--brand)";
+          if (c) return c; // the bot's own avatar color, from frames
+          let h = 0;
+          for (const ch of who) h = (h * 31 + ch.charCodeAt(0)) % 360;
+          return "hsl(" + h + ",55%,42%)";
+        }
+
+        // turn bare http(s) URLs into clickable links; safe (only http(s) matched,
+        // href set as a property, so no javascript: or markup injection)
+        function appendLinked(parent, text) {
+          const re = /(https?:\/\/[^\s<]+)/g;
+          let last = 0, m;
+          while ((m = re.exec(text)) !== null) {
+            if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+            let url = m[0], trail = "";
+            const t = url.match(/[)\].,!?;:'"]+$/); // don't swallow trailing punctuation
+            if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+            const a = document.createElement("a");
+            a.href = url; a.textContent = url;
+            a.target = "_blank"; a.rel = "noopener noreferrer";
+            a.style.color = "inherit"; a.style.textDecoration = "underline";
+            parent.appendChild(a);
+            if (trail) parent.appendChild(document.createTextNode(trail));
+            last = m.index + m[0].length;
+          }
+          if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+        }
+
+        function add(who, text, you, c) {
+          const el = listEl();
+          if (!el || text == null) return;
+          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+          const label = you ? "you" : who;
+          const line = document.createElement("p");
+          line.style.color = colorFor(who, you, c);
+
+          if (label === lastWho) {
+            // same speaker as the previous line — don't repeat the name
+            line.className = "ts-line ts-cont";
+            appendLinked(line, text);
+          } else {
+            lastWho = label;
+            line.className = "ts-line";
+            const w = document.createElement("span");
+            w.className = "ts-who";
+            w.textContent = label + ": ";
+            line.appendChild(w);
+            appendLinked(line, text);
+          }
+
+          el.appendChild(line);
+          if (atBottom) el.scrollTop = el.scrollHeight;
+        }
+
+        function note(f) {
+          if (!f || typeof f !== "object") return;
+          if (f.type === "hello") {
+            if (f.id != null) { if (f.displayName) names[f.id] = f.displayName; if (f.color) colors[f.id] = f.color; }
+            (f.peers || []).forEach((p) => {
+              if (p && p.id != null) { names[p.id] = p.displayName || ("#" + p.id); if (p.color) colors[p.id] = p.color; }
+            });
+          } else if (f.type === "join" && f.peer) {
+            names[f.peer.id] = f.peer.displayName || ("#" + f.peer.id);
+            if (f.peer.color) colors[f.peer.id] = f.peer.color;
+          } else if ((f.type === "profile" || f.type === "move") && f.id != null) {
+            if (f.displayName) names[f.id] = f.displayName;
+            if (f.color) colors[f.id] = f.color;
+          } else if (f.type === "say") {
+            add(names[f.id] || ("#" + f.id), f.text, false, colors[f.id]);
+          }
+        }
+        const Native = window.WebSocket;
+        function Wrapped(url, protocols) {
+          const ws = protocols === undefined ? new Native(url) : new Native(url, protocols);
+          ws.addEventListener("message", (ev) => { try { note(JSON.parse(ev.data)); } catch (e) {} });
+          const send = ws.send.bind(ws);
+          ws.send = function (data) {
+            try { const f = JSON.parse(data); if (f && f.type === "say") add("you", f.text, true); } catch (e) {}
+            return send(data);
+          };
+          return ws;
+        }
+        Wrapped.prototype = Native.prototype;
+        ["CONNECTING", "OPEN", "CLOSING", "CLOSED"].forEach((k) => (Wrapped[k] = Native[k]));
+        window.WebSocket = Wrapped;
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const panel = document.getElementById("ts-log");
+          const toggle = document.getElementById("ts-log-toggle");
+          const close = () => { panel.classList.remove("open"); panel.setAttribute("aria-hidden", "true"); };
+          toggle.addEventListener("click", () =>
+            panel.classList.contains("open")
+              ? close()
+              : (panel.classList.add("open"), panel.setAttribute("aria-hidden", "false"))
+          );
+          panel.querySelector(".ts-x").addEventListener("click", close);
+        });
+      })();
+    </script>
+
+    <link rel="stylesheet" href="http://127.0.0.1:8788/widget.css" />
+    <div id="townsquare-root"></div>
+    <script type="module">
+      import { mountTownSquare } from "http://127.0.0.1:8788/townsquare.mjs";
+      mountTownSquare(document.getElementById("townsquare-root"), {
+        serverOrigin: "http://127.0.0.1:8788",
+        socketPath: "/live",
+        siteKey: "sorted.plus",
+        theme: "host",
+      });
+    </script>
+    <!-- =================== end TownSquare live demo =================== -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/elixir.min.js"></script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

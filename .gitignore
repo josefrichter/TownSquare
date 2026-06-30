@@ -1,25 +1,23 @@
-# Ignore local install artifacts
-node_modules/
+# The directory Mix will write compiled artifacts to.
+/_build/
 
-# Local deploy config
-.env
-.env.deploy.local
-.env.deploy.staging
+# If you run "mix test --cover", coverage assets end up here.
+/cover/
 
-# Local hosted-site registry
-.data/
+# The directory Mix downloads your dependencies sources to.
+/deps/
 
-# Logs
-npm-debug.log*
+# Where third-party dependencies like ExDoc output generated docs.
+/doc/
 
-# OS/editor noise
-.DS_Store
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
 
-# Local hosted-site registry
-.data/
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
 
-# Admin scripts
-/scripts/admin/*
+# Ignore package tarball (built via "mix hex.build").
+town_square_beam-*.tar
 
-# Local Claude Code worktrees
-.claude/worktrees/
+# Temporary files, for example, from tests.
+/tmp/
