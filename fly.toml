@@ -1,0 +1,36 @@
+# Fly.io config for the TownSquare BEAM server.
+# Deployed standalone at townsquare.josefrichter.design; the josefrichter.design
+# blog embeds the widget cross-origin, gated by TOWNSQUARE_ALLOWED_ORIGINS.
+
+app = "josefrichter-townsquare"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # The Dockerfile listens on 8788. Lock the socket to the blog's origin, and
+  # trust Fly's x-forwarded-for so per-IP rate limiting keys on the real client.
+  PORT = "8788"
+  TOWNSQUARE_ALLOWED_ORIGINS = "https://josefrichter.design"
+  TOWNSQUARE_TRUST_PROXY = "true"
+
+[http_service]
+  internal_port = 8788
+  force_https = true
+  # Keep one tiny machine warm so a reader landing on the article doesn't wait
+  # on a cold boot; WebSocket presence doesn't suspend gracefully anyway.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
