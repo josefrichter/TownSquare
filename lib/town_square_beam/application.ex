@@ -24,6 +24,7 @@ defmodule TownSquareBeam.Application do
     children = [
       {Registry, keys: :unique, name: TownSquareBeam.SceneRegistry},
       {DynamicSupervisor, name: TownSquareBeam.SceneSupervisor, strategy: :one_for_one},
+      TownSquareBeam.RateLimit,
       {Bandit, plug: TownSquareBeam.Router, port: port}
     ]
 
