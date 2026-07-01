@@ -1,12 +1,14 @@
 # TownSquare — BEAM backend
 
+Writeup: [TownSquare is a perfect match for BEAM](https://josefrichter.design/blog/townsquare-beam)
+
 An Elixir/OTP port of TownSquare's **realtime core**, talking the exact same
 WebSocket protocol as the original Node server, so the unchanged vanilla-JS
 widget in `public/` works against it without a single edit.
 
-This exists to make a point (see the [write-up](https://josefrichter.design/blog/townsquare-beam)):
-realtime presence is the BEAM's home turf, and porting the core makes a whole
-category of the original's `docs/tech-debt.md` items disappear by construction.
+This exists to make a point: realtime presence is the BEAM's home turf, and
+porting the core makes a whole category of the original's `docs/tech-debt.md`
+items disappear by construction.
 
 ## Stack
 
