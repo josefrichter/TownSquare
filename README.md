@@ -94,3 +94,18 @@ Intentionally **not** ported (ordinary CRUD where the runtime is moot): the
 site registry, admin API, moderation, the world map, IP rate-limiting,
 proof-of-work, the Plausible proxy, plugins, and ambient birds. The point of
 the exercise is the realtime core, which is where the BEAM's advantages live.
+
+## TODO
+
+- **Cluster `SceneRegistry` across machines.** It's a plain local `Registry`
+  (`application.ex`), not `:pg`/libcluster — fine on one node, but this app
+  currently runs on `min_machines_running` machines with no session affinity
+  in `fly.toml`, so Fly's proxy can land two visitors to the same scene on
+  different machines, each running its own isolated, unaware-of-the-other
+  scene GenServer. Confirmed live: two machines' "crowd" scene rosters were
+  disjoint (SSH + `:sys.get_state` on each). Currently mitigated by pinning
+  to a single machine — real fix is clustering the nodes (same libcluster/
+  Fly-private-network approach as the crowd bot swarm) and making scene
+  state genuinely cluster-wide (broadcast via `:pg`, not just dedup like
+  crowd's `BotRegistry` — a scene's *live* state needs to merge across
+  nodes, not just pick one survivor).
